@@ -1,14 +1,12 @@
-name: Deploy Pi Searcher to GitHub Pages
+name: Build Pi Searcher
 on:
   push:
     branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
-  group: pages
+  group: pi-searcher-build
   cancel-in-progress: true
 jobs:
   build:
@@ -16,32 +14,33 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Download and bundle all 100 million pi digits
         shell: bash
         run: |
           set -euo pipefail
-          curl -L --fail --retry 3 https://files.pilookup.com/pi/1-100000000.zip -o /tmp/pi-100m.zip
+          curl -L --fail --retry 3 --retry-all-errors https://files.pilookup.com/pi/1-100000000.zip -o /tmp/pi-100m.zip
           TXT_PATH="$(unzip -Z1 /tmp/pi-100m.zip | awk 'tolower($0) ~ /[.]txt$/ {print; exit}')"
           test -n "$TXT_PATH"
           unzip -p /tmp/pi-100m.zip "$TXT_PATH" > pi.txt
           DIGITS="$(tr -cd '0-9' < pi.txt | wc -c)"
           test "$DIGITS" -ge 100000000
           echo "Bundled $DIGITS digits of pi into pi.txt"
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
+      - name: Package app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp index.html dist/
+          cp pi.txt dist/
+          for file in manifest.json service-worker.js; do
+            if [ -f "$file" ]; then cp "$file" dist/; fi
+          done
+          cp -R assets dist/assets 2>/dev/null || true
+          du -sh dist
+      - name: Upload built app
+        uses: actions/upload-artifact@v4
         with:
-          path: .
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: pi-searcher-built-app
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
