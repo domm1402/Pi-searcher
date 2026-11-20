@@ -36,6 +36,7 @@ private val muted = Color(0xFF8493A9)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MainActivityHolder.context = applicationContext
         window.statusBarColor = android.graphics.Color.rgb(8,13,24)
         window.navigationBarColor = android.graphics.Color.rgb(8,13,24)
         setContent { PiSearcherApp() }
