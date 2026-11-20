@@ -58,7 +58,26 @@ jobs:
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           echo "APK size: $(du -h "$APK" | cut -f1)"
-          unzip -l "$APK" | grep 'assets/pi-100m.txt.gz'
+          python3 - <<'PY'
+          import gzip, zipfile
+          apk = "app/build/outputs/apk/debug/app-debug.apk"
+          with zipfile.ZipFile(apk) as z:
+              candidates = [n for n in z.namelist() if "pi-100m" in n.lower()]
+              print("Pi asset candidates:", candidates)
+              assert candidates, "Pi dataset is missing from the APK"
+              valid = False
+              for name in candidates:
+                  data = z.read(name)
+                  try:
+                      raw = gzip.decompress(data)
+                  except OSError:
+                      raw = data
+                  if len(raw) == 100_000_000 and all(48 <= c <= 57 for c in raw):
+                      valid = True
+                      print(f"Verified {name}: exactly 100,000,000 digits")
+                      break
+              assert valid, "No packaged Pi asset contains exactly 100M digits"
+          PY
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
