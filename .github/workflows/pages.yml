@@ -1,4 +1,4 @@
-name: Build Pi Searcher
+name: Build Pi Searcher APK
 on:
   push:
     branches: [main]
@@ -6,41 +6,49 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: pi-searcher-build
+  group: pi-searcher-android
   cancel-in-progress: true
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download and bundle all 100 million pi digits
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Download and bundle 100 million digits of pi
         shell: bash
         run: |
           set -euo pipefail
-          curl -L --fail --retry 3 --retry-all-errors https://files.pilookup.com/pi/1-100000000.zip -o /tmp/pi-100m.zip
-          TXT_PATH="$(unzip -Z1 /tmp/pi-100m.zip | awk 'tolower($0) ~ /[.]txt$/ {print; exit}')"
+          mkdir -p app/src/main/assets
+          curl -L --fail --retry 4 --retry-all-errors https://files.pilookup.com/pi/1-100000000.zip -o /tmp/pi.zip
+          TXT_PATH="$(unzip -Z1 /tmp/pi.zip | awk 'tolower($0) ~ /[.]txt$/ {print; exit}')"
           test -n "$TXT_PATH"
-          unzip -p /tmp/pi-100m.zip "$TXT_PATH" > pi.txt
-          DIGITS="$(tr -cd '0-9' < pi.txt | wc -c)"
-          test "$DIGITS" -ge 100000000
-          echo "Bundled $DIGITS digits of pi into pi.txt"
-      - name: Package app
-        shell: bash
+          unzip -p /tmp/pi.zip "$TXT_PATH" | tr -cd '0-9' | head -c 100000000 > /tmp/pi-digits.txt
+          test "$(wc -c < /tmp/pi-digits.txt)" -eq 100000000
+          gzip -9 -c /tmp/pi-digits.txt > app/src/main/assets/pi-100m.txt.gz
+          echo "Bundled $(wc -c < /tmp/pi-digits.txt) digits; compressed asset: $(du -h app/src/main/assets/pi-100m.txt.gz | cut -f1)"
+      - name: Build debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Verify APK
         run: |
           set -euo pipefail
-          mkdir -p dist
-          cp index.html dist/
-          cp pi.txt dist/
-          for file in manifest.json service-worker.js; do
-            if [ -f "$file" ]; then cp "$file" dist/; fi
-          done
-          cp -R assets dist/assets 2>/dev/null || true
-          du -sh dist
-      - name: Upload built app
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          echo "APK size: $(du -h "$APK" | cut -f1)"
+          unzip -l "$APK" | grep 'assets/pi-100m.txt.gz'
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: pi-searcher-built-app
-          path: dist/
+          name: Pi-Searcher-Android-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
