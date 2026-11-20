@@ -32,3 +32,17 @@ The pi.delivery API is an experimental community-operated service with no availa
 ## Privacy
 
 Searches and notebook entries stay in browser storage. Queries are not sent to a search backend; only digit-range requests are sent to pi.delivery.
+
+
+## Large local datasets: 500 million and 1 billion digits
+
+The app includes 500M and 1B search-depth options. These use a local TXT dataset selected by the user, processed as a stream in the browser. The dataset is not uploaded to Pi Searcher. This avoids attempting to allocate a billion-character JavaScript string or store a 1GB file inside GitHub Pages.
+
+To use these modes:
+1. Obtain the required Pi digit data and extract the ZIP archive(s) to plain text.
+2. Select a TXT file containing at least 500,000,000 or 1,000,000,000 decimal digits.
+3. Choose 500M or 1B and run the search.
+
+PILookup publishes downloadable 100-million-digit ZIP segments, so reaching 500M requires five consecutive segments and 1B requires ten. The published segment list is at https://pilookup.com/download.html. Check the provider's terms and verify the downloaded files before relying on search results.
+
+Large-file search is limited by the phone's available storage, browser file handling, and processing speed. It streams the file and keeps only a small overlap between read blocks. It does not pre-download the dataset automatically.
