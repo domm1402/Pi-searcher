@@ -6,13 +6,13 @@ A mobile-first progressive web app for searching and exploring the decimal digit
 
 - Search numeric sequences, with overlapping matches and configurable result limits.
 - Convert words to number sequences using A=01 through Z=26; spaces become 00.
-- Search 10K, 100K, 1M, 5M, 10M, or a custom range up to 10 million digits.
+- Search 10K, 100K, 1M, 5M, 10M, or up to 100M digits using a local dataset.
 - Match snippets, exact positions, elapsed scan time, copy and export results.
 - Digit explorer with direct position jumps, paging, copying and bookmarks.
 - Digit laboratory with frequency counts, a chi-square comparison and common adjacent pairs.
 - Local notebook for saved searches and positions, with JSON export.
 - IndexedDB cache for downloaded 100,000-digit blocks.
-- Installable PWA shell and responsive mobile layout.
+- Seven selectable visual themes: Midnight, Hacker, Christmas, GTA VI, Deep Ocean, Sunset and Light.\n- Animated theme effects including falling Christmas snow, Hacker terminal rain and Ocean rain.\n- Installable PWA shell and responsive mobile layout.
 
 ## Run it
 
@@ -34,15 +34,15 @@ The pi.delivery API is an experimental community-operated service with no availa
 Searches and notebook entries stay in browser storage. Queries are not sent to a search backend; only digit-range requests are sent to pi.delivery.
 
 
-## Large local datasets: 500 million and 1 billion digits
+## Large local dataset: 100 million digits
 
-The app includes 500M and 1B search-depth options. These use a local TXT dataset selected by the user, processed as a stream in the browser. The dataset is not uploaded to Pi Searcher. This avoids attempting to allocate a billion-character JavaScript string or store a 1GB file inside GitHub Pages.
+The app includes a 100M search-depth option and custom searches up to 100M. These use a local TXT dataset selected by the user, processed as a stream in the browser. The dataset is not uploaded to Pi Searcher. This avoids attempting to allocate a billion-character JavaScript string or store a 1GB file inside GitHub Pages.
 
 To use these modes:
 1. Obtain the required Pi digit data and extract the ZIP archive(s) to plain text.
-2. Select a TXT file containing at least 500,000,000 or 1,000,000,000 decimal digits.
+2. Select a TXT file containing at least 100,000,000 decimal digits.
 3. Choose 500M or 1B and run the search.
 
-PILookup publishes downloadable 100-million-digit ZIP segments, so reaching 500M requires five consecutive segments and 1B requires ten. The published segment list is at https://pilookup.com/download.html. Check the provider's terms and verify the downloaded files before relying on search results.
+PILookup publishes downloadable 100-million-digit ZIP segments. One segment is enough for the 100M search option. The published segment list is at https://pilookup.com/download.html. Check the provider's terms and verify the downloaded files before relying on search results.
 
-Large-file search is limited by the phone's available storage, browser file handling, and processing speed. It streams the file and keeps only a small overlap between read blocks. It does not pre-download the dataset automatically.
+Large-file search is limited by the phone's available storage, browser file handling, and processing speed. A 100M-digit TXT file is approximately 100MB before whitespace and file overhead. It streams the file and keeps only a small overlap between read blocks. It does not pre-download the dataset automatically.
