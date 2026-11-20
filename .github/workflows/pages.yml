@@ -32,8 +32,22 @@ jobs:
           curl -L --fail --retry 4 --retry-all-errors https://files.pilookup.com/pi/1-100000000.zip -o /tmp/pi.zip
           TXT_PATH="$(unzip -Z1 /tmp/pi.zip | awk 'tolower($0) ~ /[.]txt$/ {print; exit}')"
           test -n "$TXT_PATH"
-          unzip -p /tmp/pi.zip "$TXT_PATH" | tr -cd '0-9' | head -c 100000000 > /tmp/pi-digits.txt
-          test "$(wc -c < /tmp/pi-digits.txt)" -eq 100000000
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile("/tmp/pi.zip")
+          name = next(n for n in z.namelist() if n.lower().endswith(".txt"))
+          total = 0
+          with z.open(name) as src, open("/tmp/pi-digits.txt", "wb") as dst:
+              while total < 100_000_000:
+                  chunk = src.read(1024 * 1024)
+                  if not chunk:
+                      break
+                  digits = bytes(c for c in chunk if 48 <= c <= 57)
+                  take = digits[:100_000_000-total]
+                  dst.write(take)
+                  total += len(take)
+          assert total == 100_000_000, f"Expected 100M digits, got {total}"
+          PY
           gzip -9 -c /tmp/pi-digits.txt > app/src/main/assets/pi-100m.txt.gz
           echo "Bundled $(wc -c < /tmp/pi-digits.txt) digits; compressed asset: $(du -h app/src/main/assets/pi-100m.txt.gz | cut -f1)"
       - name: Build debug APK
